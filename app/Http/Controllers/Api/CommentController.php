@@ -51,7 +51,34 @@ class CommentController extends Controller
         return $request->all();
         try {
 
-            
+
+            // first get ids from table
+$exist_ids = DB::table('shipping_costs')->pluck('area_id')->toArray();
+// get requested ids
+$requested_ids = $request->get('area_ids');
+// get updatable ids
+$updatable_ids = array_values(array_intersect($exist_ids, $requested_ids));
+// get insertable ids
+$insertable_ids = array_values(array_diff($requested_ids, $exist_ids));
+// prepare data for insert
+$data = collect();
+foreach ($insertable_ids as $id) {
+$data->push([
+    'area_id' => $id,
+    'cost' => $request->get('cost'),
+    'created_at' => now(),
+    'updated_at' => now()
+]);
+}
+DB::table('shipping_costs')->insert($data->toArray());
+
+// prepare for update
+DB::table('shipping_costs')
+->whereIn('area_id', $updatable_ids)
+->update([
+    'cost' => $request->get('cost'),
+    'updated_at' => now()
+]);
 
 
             $model = new Comment;
