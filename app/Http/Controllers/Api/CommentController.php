@@ -36,19 +36,10 @@ class CommentController extends Controller
     }
     public function store (Request $request) {
 
-
-        
-        $imgValidation = $request->file('picture') ? '' : 'nullable';
-        
         $validator = Validator::make($request->all(), [
-            'area_id' => 'required',
-            'name' => 'required',
-            'father_name' => 'required',
-            'mobile' => 'required',
-            'place' => 'required',
-            'shop_detail' => 'required',
-            'business_running_time' => 'required',
-            'picture' =>  $imgValidation,
+            'comments' => 'required',
+            'posts' => 'required',
+            'users' => 'required',
         ]);
         if ($validator->fails()) {
             return response([
@@ -57,27 +48,28 @@ class CommentController extends Controller
                 'errors' => $validator->errors()
             ]);
         }
-        
+        return $request->all();
         try {
+
             
-            $model = new Vendor;
-            $model->created_by = user_id();
-            $model->area_id = $request->area_id;
-            $model->name = $request->name;
-            $model->father_name = $request->father_name;
-            $model->mobile = $request->mobile;
-            $model->nid_no = $request->nid_no;
-            $model->blood_group = $request->blood_group;
-            $model->place = $request->place;
-            $model->shop_detail = $request->shop_detail;
-            $model->business_running_time = $request->business_running_time;
-            
-            if ($request->file('picture')) {
-                $imageName = time().'.'.$request->picture->extension();  
-                $request->picture->move('pictures', $imageName);
-                $model->picture = $imageName;
-            }
-            
+
+
+            $model = new Comment;
+            $model->user_id = $request->userId;
+            $model->body = $request->body;
+            $model->postId = $request->postId;
+            $model->save();
+
+            $model = new Comment;
+            $model->user_id = $request->userId;
+            $model->body = $request->body;
+            $model->postId = $request->postId;
+            $model->save();
+
+            $model = new Comment;
+            $model->user_id = $request->userId;
+            $model->body = $request->body;
+            $model->postId = $request->postId;
             $model->save();
             
             
