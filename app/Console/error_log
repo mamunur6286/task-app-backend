@@ -1,0 +1,4 @@
+[12-Aug-2021 04:54:37 UTC] PHP Fatal error:  Uncaught Error: Class 'Laravel\Lumen\Console\Kernel' not found in /home/trueearn/public_html/earnapp/app/Console/Kernel.php:8
+Stack trace:
+#0 {main}
+  thrown in /home/trueearn/public_html/earnapp/app/Console/Kernel.php on line 8
