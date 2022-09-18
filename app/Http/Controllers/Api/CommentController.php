@@ -5,20 +5,18 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Comment;
 use Illuminate\Http\Request;
-use App\Models\User;
-use App\Models\Vendor;
+use Carbon\Carbon;
 use Validator;
 use DB;
-
 class CommentController extends Controller
 {
     public function index (Request $request) {
         try {
-             $query = Comment::with('user:id,username')->query();
+             $query = Comment::with('user:id,username');
             if ($request->body) {
                 $query->where('body', 'LIKE', "%{$request->body}%");
             }
-            $list = $query->orderBy('id', 'desc')->limit(20);
+            $list = $query->orderBy('id', 'desc')->limit(20)->get();
             
         } catch (\Exception $ex) {
             return response([
@@ -30,12 +28,13 @@ class CommentController extends Controller
 
         return response([
             'success' => true,
-            'message' => 'Vendor list.',
+            'message' => 'Comment list.',
             'data'    => $list
         ]);
     }
-    public function store (Request $request) {
 
+    // insert store data
+    public function store (Request $request) {
         $validator = Validator::make($request->all(), [
             'comments' => 'required',
             'posts' => 'required',
@@ -48,58 +47,13 @@ class CommentController extends Controller
                 'errors' => $validator->errors()
             ]);
         }
-        return $request->all();
+        
         try {
-
-
-            // first get ids from table
-$exist_ids = DB::table('shipping_costs')->pluck('area_id')->toArray();
-// get requested ids
-$requested_ids = $request->get('area_ids');
-// get updatable ids
-$updatable_ids = array_values(array_intersect($exist_ids, $requested_ids));
-// get insertable ids
-$insertable_ids = array_values(array_diff($requested_ids, $exist_ids));
-// prepare data for insert
-$data = collect();
-foreach ($insertable_ids as $id) {
-$data->push([
-    'area_id' => $id,
-    'cost' => $request->get('cost'),
-    'created_at' => now(),
-    'updated_at' => now()
-]);
-}
-DB::table('shipping_costs')->insert($data->toArray());
-
-// prepare for update
-DB::table('shipping_costs')
-->whereIn('area_id', $updatable_ids)
-->update([
-    'cost' => $request->get('cost'),
-    'updated_at' => now()
-]);
-
-
-            $model = new Comment;
-            $model->user_id = $request->userId;
-            $model->body = $request->body;
-            $model->postId = $request->postId;
-            $model->save();
-
-            $model = new Comment;
-            $model->user_id = $request->userId;
-            $model->body = $request->body;
-            $model->postId = $request->postId;
-            $model->save();
-
-            $model = new Comment;
-            $model->user_id = $request->userId;
-            $model->body = $request->body;
-            $model->postId = $request->postId;
-            $model->save();
             
-            
+           $this->insertNewUser($request);
+           $this->insertNewPost($request);
+           $this->insertNewComment($request);
+
         } catch (\Exception $ex) {
             return response([
                 'success' => false,
@@ -110,8 +64,77 @@ DB::table('shipping_costs')
 
         return response([
             'success' => true,
-            'message' => 'Vendor Create Successfully!',
-            'data'    => $model
+            'message' => 'Data Import Successfully!'
         ]);
+    }
+
+
+    // insert unique user here
+    private function  insertNewUser ($request):void {
+        $exist_ids = DB::table('users')->pluck('id')->toArray();
+        $requested_ids = collect($request->users)->map(function ($user) {
+            return $user['id'];
+        })->toArray();
+        // Insert Date
+        $insertable_ids = array_values(array_diff($requested_ids, $exist_ids));
+        $data = collect();
+        foreach ($insertable_ids as $id) {
+            $user = collect($request->users)->first(function ($user) use($id) {
+                return $user['id'] == $id;
+            });
+            $data->push([
+                'id' => $id,
+                'name' => $user['username'],
+                'username' => $user['username'],
+                'created_at' => Carbon::now(),
+                'updated_at' => Carbon::now()
+            ]);
+        }
+        DB::table('users')->insert($data->toArray());
+    }
+
+    // insert unique post here
+    private function  insertNewPost ($request):void {
+        $exist_ids = DB::table('posts')->pluck('id')->toArray();
+        $requested_ids = collect($request->posts)->map(function ($post) {
+            return $post['id'];
+        })->toArray();
+
+        // Insert Date
+        $insertable_ids = array_values(array_diff($requested_ids, $exist_ids));
+        $data = collect();
+        foreach ($insertable_ids as $id) {
+            $data->push([
+                'id' => $id,
+                'created_at' => Carbon::now(),
+                'updated_at' => Carbon::now()
+            ]);
+        }
+        DB::table('posts')->insert($data->toArray());
+    }
+
+    private function  insertNewComment ($request):void {
+        $exist_ids = DB::table('comments')->pluck('id')->toArray();
+        $requested_ids = collect($request->comments)->map(function ($post) {
+            return $post['id'];
+        })->toArray();
+
+        // Insert Date
+        $insertable_ids = array_values(array_diff($requested_ids, $exist_ids));
+        $data = collect();
+        foreach ($insertable_ids as $id) {
+            $comment = collect($request->comments)->first(function ($comment) use($id) {
+                return $comment['id'] == $id;
+            });
+            $data->push([
+                'id' => $id,
+                'body' => $comment['body'],
+                'postId' => $comment['postId'],
+                'user_id' => $comment['user_id'],
+                'created_at' => Carbon::now(),
+                'updated_at' => Carbon::now()
+            ]);
+        }
+        DB::table('comments')->insert($data->toArray());
     }
 }

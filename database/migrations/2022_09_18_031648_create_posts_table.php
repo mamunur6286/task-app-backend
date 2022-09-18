@@ -13,9 +13,10 @@ class CreatePostsTable extends Migration
      */
     public function up()
     {
+        Schema::disableForeignKeyConstraints();
         Schema::create('posts', function (Blueprint $table) {
             $table->id();
-            $table->text('body');
+            $table->text('body')->nullable();
             $table->timestamps();
         });
     }
